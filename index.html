@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Pixel Adventure - 8-bit Sound</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #050510;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Courier New', Courier, monospace;
+            color: white;
+        }
+
+        .game-scene {
+            position: relative;
+            width: 600px; /* Ajuste para o tamanho real da sua imagem */
+            height: 600px;
+            border: 4px solid #333;
+            box-shadow: 0 0 50px rgba(0,0,0,0.9);
+            cursor: pointer;
+        }
+
+        .background {
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated;
+        }
+
+        /* Efeito de névoa por cima da imagem */
+        .fog {
+            position: absolute;
+            bottom: 0; left: 0;
+            width: 200%; height: 30%;
+            background: linear-gradient(to bottom, transparent, rgba(150, 150, 255, 0.15));
+            filter: blur(15px);
+            animation: moveFog 15s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes moveFog {
+            from { transform: translateX(0); }
+            to { transform: translateX(-50%); }
+        }
+
+        .msg {
+            margin-top: 15px;
+            text-shadow: 2px 2px black;
+            animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0.3; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-scene" onclick="startMusic()">
+        <img src="1000057173.png" class="background">
+        <div class="fog"></div>
+    </div>
+
+    <div class="msg" id="hint">CLIQUE NA IMAGEM PARA OUVIR A MÚSICA 8-BIT</div>
+
+    <script>
+        let audioCtx = null;
+
+        function startMusic() {
+            if (audioCtx) return; // Evita criar vários áudios ao mesmo tempo
+            
+            document.getElementById('hint').innerText = "MÚSICA GERADA PELO CÓDIGO!";
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+            // Sequência de notas para uma melodia sombria de castelo
+            const melody = [
+                { f: 146.83, d: 0.5 }, // D3
+                { f: 174.61, d: 0.5 }, // F3
+                { f: 220.00, d: 0.5 }, // A3
+                { f: 207.65, d: 1.0 }, // G#3
+                { f: 146.83, d: 0.5 }, 
+                { f: 174.61, d: 0.5 },
+                { f: 220.00, d: 0.5 },
+                { f: 261.63, d: 1.0 }  // C4
+            ];
+
+            let time = audioCtx.currentTime;
+
+            function playLoop() {
+                melody.forEach(note => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+
+                    // Onda quadrada dá o som característico de 8-bit (tipo Nintendinho)
+                    osc.type = 'square'; 
+                    osc.frequency.value = note.f;
+
+                    gain.gain.setValueAtTime(0.1, time);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, time + note.d);
+
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+
+                    osc.start(time);
+                    osc.stop(time + note.d);
+
+                    time += note.d;
+                });
+                
+                // Reinicia a melodia antes de acabar
+                setTimeout(playLoop, (time - audioCtx.currentTime) * 1000);
+            }
+
+            playLoop();
+        }
+    </script>
+</body>
+</html>
