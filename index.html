@@ -2,45 +2,69 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Pixel Adventure - 8-bit Sound</title>
+    <title>Menu Gótico - Full Effects</title>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <style>
-        body {
-            margin: 0;
-            background-color: #050510;
+        body, html {
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            background-color: #000;
             display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+            font-family: 'VT323', monospace;
             overflow: hidden;
-            font-family: 'Courier New', Courier, monospace;
-            color: white;
         }
 
-        .game-scene {
+        /* Container que garante que a imagem apareça inteira */
+        .game-container {
             position: relative;
-            width: 600px; /* Ajuste para o tamanho real da sua imagem */
-            height: 600px;
-            border: 4px solid #333;
-            box-shadow: 0 0 50px rgba(0,0,0,0.9);
-            cursor: pointer;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end; /* Menu na direita */
+            background-color: #000;
         }
 
-        .background {
-            width: 100%;
-            height: 100%;
+        /* Imagem ajustada para aparecer inteira (contain) */
+        .bg-img {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            object-fit: contain; /* Garante que a imagem inteira apareça sem cortes */
             image-rendering: pixelated;
+            z-index: 1;
         }
 
-        /* Efeito de névoa por cima da imagem */
+        /* --- EFEITOS VISUAIS --- */
+
+        /* 1. Relâmpago */
+        .lightning {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: white;
+            opacity: 0;
+            z-index: 2;
+            pointer-events: none;
+            animation: flash 8s infinite;
+        }
+
+        @keyframes flash {
+            0%, 90%, 100% { opacity: 0; }
+            91% { opacity: 0.2; }
+            92% { opacity: 0; }
+            93% { opacity: 0.4; }
+            94% { opacity: 0; }
+        }
+
+        /* 2. Névoa */
         .fog {
             position: absolute;
-            bottom: 0; left: 0;
+            bottom: 10%; left: 0;
             width: 200%; height: 30%;
-            background: linear-gradient(to bottom, transparent, rgba(150, 150, 255, 0.15));
-            filter: blur(15px);
+            background: linear-gradient(to bottom, transparent, rgba(100, 100, 150, 0.2));
+            filter: blur(20px);
+            z-index: 3;
             animation: moveFog 15s linear infinite;
-            pointer-events: none;
         }
 
         @keyframes moveFog {
@@ -48,75 +72,130 @@
             to { transform: translateX(-50%); }
         }
 
-        .msg {
-            margin-top: 15px;
-            text-shadow: 2px 2px black;
-            animation: blink 1.5s infinite;
+        /* 3. Brilho da Lua */
+        .moon-glow {
+            position: absolute;
+            top: 15%; left: 25%; /* Ajuste conforme a posição da lua na imagem */
+            width: 150px; height: 150px;
+            background: rgba(200, 220, 255, 0.1);
+            box-shadow: 0 0 60px 20px rgba(200, 220, 255, 0.2);
+            border-radius: 50%;
+            z-index: 2;
+            animation: pulse 4s ease-in-out infinite;
         }
 
-        @keyframes blink {
-            50% { opacity: 0.3; }
+        @keyframes pulse {
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+
+        /* --- MENU --- */
+
+        .menu {
+            position: relative;
+            z-index: 10;
+            margin-right: 10%;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .option {
+            font-size: 50px;
+            color: rgba(255,255,255,0.4);
+            display: flex;
+            align-items: center;
+            transition: 0.2s;
+            cursor: pointer;
+        }
+
+        .option.active {
+            color: #fff;
+            text-shadow: 0 0 15px rgba(255,255,255,0.8);
+            transform: translateX(-10px);
+        }
+
+        .arrow {
+            width: 0; height: 0;
+            border-top: 10px solid transparent;
+            border-bottom: 10px solid transparent;
+            border-left: 15px solid #fff;
+            margin-right: 15px;
+            display: none;
+        }
+
+        .active .arrow { display: block; }
+
+        .footer {
+            position: absolute;
+            bottom: 10px; width: 100%;
+            text-align: center; color: #444;
+            z-index: 10; font-size: 18px;
         }
     </style>
 </head>
 <body>
 
-    <div class="game-scene" onclick="startMusic()">
-        <img src="1000057173.png" class="background">
+    <div class="game-container" id="game">
+        <img src="1000057173.png.jpg" class="bg-img">
+        
+        <div class="lightning"></div>
+        <div class="moon-glow"></div>
         <div class="fog"></div>
+
+        <div class="menu">
+            <div class="option active"><div class="arrow"></div>START</div>
+            <div class="option"><div class="arrow"></div>1 PLAYER</div>
+            <div class="option"><div class="arrow"></div>2 PLAYER</div>
+            <div class="option"><div class="arrow"></div>LOADING</div>
+            <div class="option"><div class="arrow"></div>SETTING</div>
+        </div>
     </div>
 
-    <div class="msg" id="hint">CLIQUE NA IMAGEM PARA OUVIR A MÚSICA 8-BIT</div>
+    <div class="footer">CLIQUE PARA SOM E USE AS SETAS (↑ ↓)</div>
 
     <script>
-        let audioCtx = null;
+        const options = document.querySelectorAll('.option');
+        let index = 0;
+        let audioStarted = false;
 
-        function startMusic() {
-            if (audioCtx) return; // Evita criar vários áudios ao mesmo tempo
-            
-            document.getElementById('hint').innerText = "MÚSICA GERADA PELO CÓDIGO!";
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-            // Sequência de notas para uma melodia sombria de castelo
-            const melody = [
-                { f: 146.83, d: 0.5 }, // D3
-                { f: 174.61, d: 0.5 }, // F3
-                { f: 220.00, d: 0.5 }, // A3
-                { f: 207.65, d: 1.0 }, // G#3
-                { f: 146.83, d: 0.5 }, 
-                { f: 174.61, d: 0.5 },
-                { f: 220.00, d: 0.5 },
-                { f: 261.63, d: 1.0 }  // C4
-            ];
-
-            let time = audioCtx.currentTime;
-
-            function playLoop() {
-                melody.forEach(note => {
-                    const osc = audioCtx.createOscillator();
-                    const gain = audioCtx.createGain();
-
-                    // Onda quadrada dá o som característico de 8-bit (tipo Nintendinho)
-                    osc.type = 'square'; 
-                    osc.frequency.value = note.f;
-
-                    gain.gain.setValueAtTime(0.1, time);
-                    gain.gain.exponentialRampToValueAtTime(0.0001, time + note.d);
-
-                    osc.connect(gain);
-                    gain.connect(audioCtx.destination);
-
-                    osc.start(time);
-                    osc.stop(time + note.d);
-
-                    time += note.d;
-                });
-                
-                // Reinicia a melodia antes de acabar
-                setTimeout(playLoop, (time - audioCtx.currentTime) * 1000);
+        window.addEventListener('keydown', (e) => {
+            if(e.key === "ArrowDown") {
+                index = (index + 1) % options.length;
+                update();
+            } else if(e.key === "ArrowUp") {
+                index = (index - 1 + options.length) % options.length;
+                update();
             }
+        });
 
-            playLoop();
+        function update() {
+            options.forEach((opt, i) => {
+                opt.classList.toggle('active', i === index);
+            });
+        }
+
+        document.getElementById('game').addEventListener('click', () => {
+            if(!audioStarted) {
+                startAudio();
+                audioStarted = true;
+                document.querySelector('.footer').style.opacity = "0.2";
+            }
+        });
+
+        function startAudio() {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const notes = [146, 174, 220, 207];
+            let n = 0;
+            setInterval(() => {
+                const osc = ctx.createOscillator();
+                const g = ctx.createGain();
+                osc.type = 'square';
+                osc.frequency.value = notes[n];
+                g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+                osc.connect(g); g.connect(ctx.destination);
+                osc.start(); osc.stop(ctx.currentTime + 0.4);
+                n = (n + 1) % notes.length;
+            }, 600);
         }
     </script>
 </body>
